@@ -1,4 +1,4 @@
-# L-System Dual Canvas Fractal Demo
+# JavaScript L-System Dual Canvas Fractal Demo
 
 Straight forward dual canvas technique showing how to utilize a single iterative function to draw L-system fractals with replications.
 
