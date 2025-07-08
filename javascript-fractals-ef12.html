@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Fractal Generator - Tabs</title>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<style>
+  body {
+    font-family: "Lucida Console", sans-serif;
+    background: #111;
+    color: #eee;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+  }
+	
+	
+  #controls {
+      opacity: 0.5;
+      position: absolute;
+      top: 1rem;
+      right: 1rem;
+      background: #22252F;
+      padding: 1rem;
+      border: 5px outset red;
+      width: 250px;
+      color: white;
+      z-index: 9999;
+      cursor: move;
+      display: none;
+  }
+
+  /* prevents selection of labels to improve scroll behavior, but allows textbox selection */
+  #controls label:not(:has(input[type="text"])) {
+    user-select: none;
+  } 
+  
+  /* the tab 'buttons' at the top of the control */
+  .tabs {
+    display: flex;
+    margin-bottom: 0.5rem;
+  }
+  
+  /* the tab 'page' below the buttons */
+  .tab {
+    flex: 1;
+    padding: 0.5rem;
+    background: #22252F;
+    text-align: center;
+    cursor: pointer;
+    color: #9A9A9A;
+  }
+  
+  .tab.active {
+    background: #333A42;
+    color: #CCCCCC;
+  }
+  
+  .tab-content {
+    display: none;
+  }
+  
+  .tab-content.active {
+    display: block;
+  }
+  
+  label {
+    display: block;
+    margin-top: 0.5rem;
+  }
+  
+  input[type="range"], input[type="color"] {
+    width: 100%;
+  }
+  
+  /* canvas bg color should not be visible unless an error occurs */
+  canvas {
+    background: #5500FF;
+    display: block;
+  }
+
+  #canvas2{
+    background: rgba(0,0,0,0);
+    display: none;
+  }
+
+  /* burger icon */
+  #toggleMenu 
+  {
+    position: absolute;top: 1rem;
+    left: 1rem;
+    background: #333A42;
+    color: white;
+    font-size: 1.2rem;
+    padding: 0.4rem 0.6rem;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    z-index: 10001;
+  }
+
+
+  input[type="range"] 
+  {
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    width: 100%;
+    background: transparent;
+    margin: 0.5rem 0;
+    height: 24px; /* Gives room for the thumb */
+  }
+
+/* Chrome / Edge / Opera slider - track and thumb */
+input[type="range"]::-webkit-slider-runnable-track {
+  height: 4px;
+  background: #666;
+  border-radius: 2px;
+}
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  margin-top: -6px; /* Centers the thumb vertically */
+  width: 16px;
+  height: 16px;
+  background: #FFFFFF;
+  border-radius: 50%;
+  cursor: pointer;
+  border: 1px solid #000;
+}
+
+/* Firefox slider, track and thumb*/
+input[type="range"]::-moz-range-track {
+  height: 4px;
+  background: #666;
+  border-radius: 2px;
+}
+input[type="range"]::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  background: #FFFFFF;
+  border-radius: 50%;
+  cursor: pointer;
+  border: 1px solid #000;
+}
+    
+</style>
+</head>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<body>
+  <canvas id="canvas" width="1000" height="600"></canvas>
+  <canvas id="canvas2" width="1000" height="600"> </canvas>
+
+  <button id="toggleMenu">☰</button>
+
+  <div id="controls">
+    
+    <div class="tabs">
+      <div class="tab active" data-tab="fractal">Fractal</div>
+      <div class="tab" data-tab="replicants">Rep.</div>
+      <div class="tab" data-tab="color">RGB</div>
+      <div class="tab" data-tab="canvas">View</div>
+    </div>
+
+    <div class="tab-content active" id="tab-fractal">
+      <label>Depth: <span id="depthValue">10</span><input type="range" id="depth" min="1" max="30" value="10"></label>  
+      <label>Branch Scale: <span id="scaleValue">0.75</span><input type="range" id="scale" min="-2.0" max="2.0" step="0.01" value="0.75"></label>
+      <label>Branch Angle: <span id="branchValue">20</span><input type="range" id="branch" min="-180" max="180" value="20"></label>   
+      <label>Lean: <span id="leanValue">0</span><input type="range" id="lean" min="-180" max="180" value="0"></label>
+      <label>Size: <span id="sizeValue">100</span><input type="range" id="size" min="-400" max="400" value="100"></label>
+      <label>Chaos: <span id="chaosValue">0</span><input type="range" id="chaos" min="0" max="150" value="0"></label> 
+      <label>Origin X: <span id="originXValue">0.50</span><input type="range" id="originX" min="-1.5" max="1.5" step="0.01" value="0.5"></label>
+      <label>Origin Y: <span id="originYValue">0.50</span><input type="range" id="originY" min="-1.5" max="1.5" step="0.01" value="0.8"></label>
+      <label><input type="checkbox" id="center"> Start from center</label>
+    </div>
+
+    <div class="tab-content" id="tab-replicants">
+      <label>Radial Replicates: <span id="repsValue">0</span><input type="range" id="reps" min="0" max="120" value="0"></label>
+      <label>Replicate Offset X: <span id="repOffsetXValue">0</span><input type="range" id="repOffsetX" min="-1000" max="1000" value="0"></label>
+      <label>Replicate Offset Y: <span id="repOffsetYValue">0</span><input type="range" id="repOffsetY" min="-1000" max="1000" value="0"></label>
+      <label>Replicate Scale: <span id="repScaleValue">1</span><input type="range" id="repScale" min="0.1" max="2" step="0.01" value="1"></label>
+      <label>Replicate Rotation: <span id="repRotateValue">0</span><input type="range" id="repRotate" min="-180" max="180" value="0"></label>
+      <label><input type="checkbox" id="hideaxiom"> Hide Primary Fractal</label>
+    </div>
+      
+
+    <div class="tab-content" id="tab-color">
+      <label>Root Color: <input type="color" id="colorRoot" value="#445588"></label>
+      <label>End Color: <input type="color" id="colorTerminal" value="#ffffff"></label>
+      <label>Background Color: <input type="color" id="bgColor" value="#000000"></label>
+    </div>
+
+    <div class="tab-content" id="tab-canvas">
+      <label>Canvas Width: <span id="canvasWidthValue">1000</span><input type="range" id="canvasWidth" min="400" max="1600" value="1000"></label>
+      <label>Canvas Height: <span id="canvasHeightValue">600</span><input type="range" id="canvasHeight" min="400" max="1000" value="600"></label>
+      <label>Canvas Zoom: <span id="canvasZoomValue">1</span><input type="range" id="canvasZoom" min="0.1" max="2" step="0.01" value="1"></label>
+      <button onclick="exportSVG()">Export SVG</button>
+    </div>
+  </div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  <script>
+    const canvas = document.getElementById("canvas");
+    const ctx = canvas.getContext("2d");
+    
+    const canvas2 = document.getElementById("canvas2");
+    const ctx2 = canvas2.getContext("2d");
+    
+    let w = canvas.width;
+    let h = canvas.height;
+    canvas2.width = w;
+    canvas2.height = h;
+	
+
+
+    const controls = {
+      //Assigns variable names in a list 'controls' based on element Id...
+      //in this case, the var names ARE the element IDs but the script needs to know that
+      depth: document.getElementById("depth"),
+      scale: document.getElementById("scale"),
+      branch: document.getElementById("branch"),
+      lean: document.getElementById("lean"),
+      size: document.getElementById("size"),
+      chaos: document.getElementById("chaos"),
+      originX: document.getElementById("originX"), 
+      originY: document.getElementById("originY"),
+      center: document.getElementById("center"),
+
+      reps: document.getElementById("reps"),
+      repOffsetX: document.getElementById("repOffsetX"),
+      repOffsetY: document.getElementById("repOffsetY"),
+      repScale: document.getElementById("repScale"),
+      repRotate: document.getElementById("repRotate"),
+      hideaxiom: document.getElementById("hideaxiom"),
+
+      root: document.getElementById("colorRoot"),
+      terminal: document.getElementById("colorTerminal"),
+      background: document.getElementById("bgColor"),
+
+      canvasWidth: document.getElementById("canvasWidth"),
+      canvasHeight: document.getElementById("canvasHeight"),
+      canvasZoom: document.getElementById("canvasZoom"),
+    };
+
+    //adds a listener for each item we added to 'controls'
+    Object.values(controls).forEach(ctrl => ctrl.addEventListener("input", draw));
+
+
+    //gives the sliders names - allowing us to set their values among other things
+    const sliders = [
+      "depth", "scale", "branch", "lean",
+      "size", "chaos", "reps", "originX", "originY",
+      "repOffsetX", "repOffsetY", "repScale", "repRotate",
+      "canvasWidth", "canvasHeight", "canvasZoom"
+    ];
+
+    //assigns 'slider' and 'valueSpan' to list 'sliders' above
+    //allows us to identify and update the label values of the sliders
+    sliders.forEach(id => 
+    {
+      const slider = document.getElementById(id);
+      const valueSpan = document.getElementById(id + "Value");
+
+      //update and format values
+      if (slider && valueSpan) 
+      {
+        // Format float sliders nicely
+        const isFloat = slider.step && slider.step < 1;
+
+        const updateValue = () => 
+        {
+          valueSpan.textContent = isFloat
+              ? parseFloat(slider.value).toFixed(2)
+              : slider.value;
+        };
+
+        updateValue(); // set initial display
+
+        slider.addEventListener("input", updateValue);
+      }
+    });
+
+
+    //draw is our 'main' loop function, which calls drawTree
+    //draw determines where and how to draw the fractal, while
+    //drawTree does the actual graphics portion and recursion
+
+    //to keep performance relatively high regarding replicants
+    //we draw only one fractal off screen on an invisible canvas, 
+    //then copy that as a singlular graphic item
+
+    //this graphics 'trick' could be taken a step further by drawing
+    //only 1 recursion in a neutral grey color, colorizing that, and
+    //placing it in accordance with the line math. this would likely allow
+    //for very high depth counts
+    function draw() {
+
+      w = +controls.canvasWidth.value;
+      h = +controls.canvasHeight.value;
+      canvas.width = w;
+      canvas.height = h;
+	  
+	  	const bg = document.getElementById("bgColor").value;
+      ctx.fillStyle = bg;
+      ctx.fillRect(0, 0, w, h);
+
+      const colorStart = hexToRgb(controls.root.value);
+      const colorEnd = hexToRgb(controls.terminal.value);
+      const replicate = +controls.reps.value;
+
+      canvas2.width = canvas.width;
+      canvas2.height = canvas.height;
+
+      const zoom = +controls.canvasZoom.value;
+      ctx2.setTransform(zoom, 0, 0, zoom, 0, 0);
+      ctx2.clearRect(0, 0, canvas2.width, canvas2.height);
+
+      let baseX = canvas.width * (document.getElementById("center").checked
+        ? 0.5
+        : parseFloat(document.getElementById("originX").value));
+
+        let baseY = canvas.height * (document.getElementById("center").checked
+        ? 0.5
+        : parseFloat(document.getElementById("originY").value));
+
+        //DRAW 'MATH RENDERED' BASE FRACTAL
+        //on canvas2, which has a transparent BG
+        drawTree(ctx2, baseX, baseY, +controls.size.value, -90, +controls.depth.value, colorStart, colorEnd);
+
+        //now draw the raster/bmp of the actual vector on the main canvas
+        //this DRAMATICALLY increases performance under all circumstance not involving high depths of recursion
+        //Copies the entire canvas surface rather than JUST the fractal, so some potential room for improvement
+        
+        const checkbox = document.getElementById('myCheckbox');
+        if (!controls.hideaxiom.checked)
+        {
+          //only draw the main fractal if hideaxiom is unchecked
+          ctx.drawImage(canvas2, 0, 0, canvas2.width, canvas2.height, 0, 0, canvas.width, canvas.height);
+        }
+        
+
+
+
+        const repOffsetX = +controls.repOffsetX.value;
+        const repOffsetY = +controls.repOffsetY.value;
+        const repScale = +controls.repScale.value;
+        const repRotate = (+controls.repRotate.value * Math.PI) / 180;
+
+        //replication loop
+        for (let i = 0; i < replicate; i++) 
+        {
+          //angle * (MATH.PI / 180) = radians
+          const angleOffset = ((360 / replicate) * i * (Math.PI / 180));
+          ctx.save();
+
+          // Move to canvas center
+          ctx.translate(w / 2, h / 2);
+
+          // Rotate around center by radial angle
+          ctx.rotate(angleOffset);
+
+          // Apply additional rotation
+          ctx.rotate(repRotate);
+
+          // Apply replicate scale
+          ctx.scale(repScale, repScale);
+
+          // Apply replicate offset from center
+          ctx.translate(repOffsetX, repOffsetY);
+
+          // Draw canvas2 (original fractal)
+          ctx.drawImage(canvas2, -w / 2, -h / 2);
+
+          ctx.restore();
+        }
+
+
+    }
+
+    //the actual recursive graphics function of drawing the tree. Called once from 'draw' 
+    //essentially, this draws a line of size 'size', then two branches of roughly size * scale
+    function drawTree(ctx, x1, y1, size, angle, depth, colorStart, colorEnd) {
+      if (depth === 0) return;
+
+      const chaos = +controls.chaos.value;
+      const lean = +controls.lean.value;
+      const branch = +controls.branch.value;
+      const scale = +controls.scale.value;
+
+      const fchaos = (chaos > 0 && depth > 1) ? (Math.random() * chaos * 2 - chaos) : 0;
+      const rad = Math.PI / 180;
+      const x2 = x1 + Math.cos((angle + fchaos) * rad) * (size + depth);
+      const y2 = y1 + Math.sin((angle + fchaos) * rad) * (size + depth);
+
+      const t = depth / +controls.depth.value;
+      const color = lerpColor(colorStart, colorEnd, t);
+      ctx.strokeStyle = `rgb(${color.r},${color.g},${color.b})`;
+      ctx.beginPath();
+      ctx.moveTo(x1, y1);
+      ctx.lineTo(x2, y2);
+      ctx.stroke();
+
+      drawTree(ctx, x2, y2, size * scale, angle - branch + lean, depth - 1, colorStart, colorEnd);
+      drawTree(ctx, x2, y2, size * scale, angle + branch + lean, depth - 1, colorStart, colorEnd);
+    }
+
+    function hexToRgb(hex) {
+      const bigint = parseInt(hex.slice(1), 16);
+      return { r: (bigint >> 16) & 255, g: (bigint >> 8) & 255, b: bigint & 255 };
+    }
+
+    function lerpColor(c1, c2, t) {
+      return {
+        r: Math.round(c2.r + (c1.r - c2.r) * t),
+        g: Math.round(c2.g + (c1.g - c2.g) * t),
+        b: Math.round(c2.b + (c1.b - c2.b) * t)
+      };
+    }
+
+    //CRAP FUNCTION - draws the SVG as an enclosed PNG...
+    //a true SVG function (which I have implemented separately for JUST the main tree)
+    //involves retracing the entire fractal as actual SVG elements, and saving
+    function exportSVG() {
+      const svgNS = "http://www.w3.org/2000/svg";
+      const svg = document.createElementNS(svgNS, "svg");
+      svg.setAttribute("width", canvas.width);
+      svg.setAttribute("height", canvas.height);
+
+      const img = new Image();
+      img.src = canvas.toDataURL("image/png");
+      img.onload = function () {
+        const ctx2 = document.createElement("canvas").getContext("2d");
+        ctx2.canvas.width = canvas.width;
+        ctx2.canvas.height = canvas.height;
+        ctx2.drawImage(img, 0, 0);
+
+        const imgTag = document.createElementNS(svgNS, "image");
+        imgTag.setAttributeNS(null, "href", img.src);
+        imgTag.setAttribute("x", 0);
+        imgTag.setAttribute("y", 0);
+        imgTag.setAttribute("width", canvas.width);
+        imgTag.setAttribute("height", canvas.height);
+        svg.appendChild(imgTag);
+
+        const svgBlob = new Blob([svg.outerHTML], { type: "image/svg+xml;charset=utf-8" });
+        const url = URL.createObjectURL(svgBlob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "fractal.svg";
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+      };
+    }
+
+    // Tabs logic
+    document.querySelectorAll(".tab").forEach(tab => {
+      tab.addEventListener("click", () => {
+        document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
+        document.querySelectorAll(".tab-content").forEach(tc => tc.classList.remove("active"));
+        tab.classList.add("active");
+        document.getElementById("tab-" + tab.dataset.tab).classList.add("active");
+      });
+    });
+
+    draw();
+	
+	
+	
+	
+	// Drag logic
+	let dragTarget = document.getElementById('controls');
+	let offsetX, offsetY, isDragging = false;
+
+	dragTarget.addEventListener('mousedown', function(e) {
+	  // Only drag if the clicked element is NOT an input, button, select, etc
+	  if (["INPUT", "SELECT", "TEXTAREA", "BUTTON", "LABEL"].includes(e.target.tagName)) return;
+
+	  isDragging = true;
+	  offsetX = e.clientX - dragTarget.offsetLeft;
+	  offsetY = e.clientY - dragTarget.offsetTop;
+	});
+
+	document.addEventListener('mousemove', function(e) {
+	  if (isDragging) {
+		dragTarget.style.left = (e.clientX - offsetX) + 'px';
+		dragTarget.style.top = (e.clientY - offsetY) + 'px';}});
+
+	document.addEventListener('mouseup', function() {
+	  isDragging = false;});		
+
+    document.getElementById("toggleMenu").addEventListener("click", () => {
+        const panel = document.getElementById("controls");
+        panel.style.display = (panel.style.display === "none") ? "block" : "none";});
+
+
+function adjustForMobile() {
+    //determines if a device MIGHT be mobile by looking at resolution...
+    //adjusts stuff as necessary... also, adds listeners just below... outside of func
+    //can also use window.innerHeight 
+
+    //likely better ways to implement this, as resizing a desktop browser to
+    //below threshold will proc this function
+
+  if (window.innerWidth <= 768) {
+    // Apply mobile-specific styles directly
+    document.querySelectorAll('.tab').forEach(tab => {
+        
+        //font size
+        tab.style.fontSize = '1.2rem'; // Smaller font size for mobile
+
+        //fractal spawn point
+        controls.originX.value = 0.2;
+        controls.size
+        document.getElementById("originXValue").textContent = 0.2;
+        document.getElementById("originYValue").textContent = controls.originY.value;
+    });
+  } else {
+    // Revert to default styles for larger screens
+    document.querySelectorAll('.tab').forEach(tab => {
+      tab.style.fontSize = ''; // Reset to default size
+    });
+  }
+}
+
+// Run on page load and when resizing the window
+window.addEventListener('load', adjustForMobile);
+window.addEventListener('resize', adjustForMobile);
+
+
+//MISC CODE - RUN ONCE
+alert("L-System Fractal Simulation\nby S.T.\n\nCleverish dual canvas raster technique gives solid performance on any device.\n\nOptions top left - Go wild with the settings BUT BE CAREFUL WITH HIGH DEPTH VALUES unless you're on a super computer.");
+
+
+  </script>
+</body>
+</html>
